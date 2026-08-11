@@ -18,10 +18,10 @@ jobs:
 
     steps:
       - name: 检出代码
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: 安装 .NET 8 SDK
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: 8.0.x
 
@@ -30,7 +30,7 @@ jobs:
         run: .\scripts\build.ps1
 
       - name: 上传单文件程序
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: AiShellLauncher-win-x64
           path: artifacts/AiShellLauncher.exe
