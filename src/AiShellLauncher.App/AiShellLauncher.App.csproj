@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <AssemblyName>AiShellLauncher</AssemblyName>
+    <RootNamespace>AiShellLauncher.App</RootNamespace>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\Logo.ico</ApplicationIcon>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\AiShellLauncher.Core\AiShellLauncher.Core.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Assets\Logo.ico" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(RuntimeBundleRoot)' != ''">
+    <EmbeddedResource Include="$(RuntimeBundleRoot)\AiShellLauncher.Runner.exe" LogicalName="Runtime.AiShellLauncher.Runner.exe" />
+    <EmbeddedResource Include="$(RuntimeBundleRoot)\AiShellLauncher.ShellExtension.dll" LogicalName="Runtime.AiShellLauncher.ShellExtension.dll" />
+    <EmbeddedResource Include="$(RuntimeBundleRoot)\MenuPackageManifest.xml" LogicalName="Runtime.MenuPackageManifest.xml" />
+    <EmbeddedResource Include="$(RuntimeBundleRoot)\Assets\Logo.ico" LogicalName="Runtime.Assets.Logo.ico" />
+    <EmbeddedResource Include="$(RuntimeBundleRoot)\Assets\Logo.png" LogicalName="Runtime.Assets.Logo.png" />
+    <EmbeddedResource Include="$(RuntimeBundleRoot)\Icons\*.ico" LogicalName="Runtime.Icons.%(Filename)%(Extension)" />
+  </ItemGroup>
+</Project>

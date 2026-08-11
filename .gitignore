@@ -1,0 +1,13 @@
+**/bin/
+**/obj/
+artifacts/
+.vs/
+*.user
+*.suo
+*.pfx
+*.cer
+*.msix
+*.appx
+*.obj
+*.lib
+*.exp

@@ -1,0 +1,37 @@
+name: 构建与测试
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 安装 .NET 8 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: 构建并测试
+        shell: pwsh
+        run: .\scripts\build.ps1
+
+      - name: 上传单文件程序
+        uses: actions/upload-artifact@v4
+        with:
+          name: AiShellLauncher-win-x64
+          path: artifacts/AiShellLauncher.exe
+          if-no-files-found: error
