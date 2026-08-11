@@ -17,10 +17,7 @@
       <RowDefinition Height="Auto" />
     </Grid.RowDefinitions>
 
-    <StackPanel Margin="2,0,2,16">
-      <TextBlock Text="命令设置" FontSize="24" FontWeight="SemiBold" Foreground="#172033" />
-      <TextBlock Text="设置程序，以及右键菜单显示的文字和图标" Margin="0,4,0,0" Foreground="#667085" />
-    </StackPanel>
+    <TextBlock Text="命令设置" FontSize="24" FontWeight="SemiBold" Foreground="#172033" Margin="2,0,2,16" />
 
     <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
       <StackPanel Margin="2,0,10,0">
@@ -49,10 +46,7 @@
             <ColumnDefinition Width="*" />
             <ColumnDefinition Width="Auto" />
           </Grid.ColumnDefinitions>
-          <StackPanel>
-            <TextBlock Text="右键菜单" FontSize="17" FontWeight="SemiBold" Foreground="#172033" />
-            <TextBlock Text="打开要显示的项目；每项都会直接出现在首层菜单" Foreground="#667085" FontSize="12" Margin="0,3,0,0" />
-          </StackPanel>
+          <TextBlock Text="右键菜单" FontSize="17" FontWeight="SemiBold" Foreground="#172033" />
           <Button Grid.Column="1" Content="＋ 自定义菜单项" Click="AddMode_Click" VerticalAlignment="Center" />
         </Grid>
 

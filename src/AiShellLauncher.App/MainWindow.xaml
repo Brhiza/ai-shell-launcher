@@ -22,10 +22,7 @@
         <ColumnDefinition Width="Auto" />
         <ColumnDefinition Width="Auto" />
       </Grid.ColumnDefinitions>
-      <StackPanel>
-        <TextBlock Text="右键菜单" FontSize="25" FontWeight="SemiBold" Foreground="#172033" />
-        <TextBlock Text="打开需要的命令，设置后保存即可" Margin="0,4,0,0" Foreground="#667085" />
-      </StackPanel>
+      <TextBlock Text="右键菜单" FontSize="25" FontWeight="SemiBold" Foreground="#172033" />
       <Button x:Name="TerminalButton"
               Grid.Column="1"
               Click="Terminal_Click"
@@ -96,10 +93,8 @@
       <Grid.ColumnDefinitions>
         <ColumnDefinition Width="*" />
         <ColumnDefinition Width="Auto" />
-        <ColumnDefinition Width="Auto" />
       </Grid.ColumnDefinitions>
-      <TextBlock Text="保存后立即更新右键菜单" Foreground="#667085" VerticalAlignment="Center" />
-      <Button Grid.Column="2" Content="保存并应用" Click="Save_Click" Style="{StaticResource PrimaryButtonStyle}" />
+      <Button Grid.Column="1" Content="保存并应用" Click="Save_Click" Style="{StaticResource PrimaryButtonStyle}" />
     </Grid>
   </Grid>
 </Window>
