@@ -12,6 +12,14 @@ public partial class App : Application
 
         try
         {
+            if (e.Args.Contains("--self-test", StringComparer.OrdinalIgnoreCase))
+            {
+                RuntimeInstaller.VerifyEmbeddedPayload();
+                ConfigService.Validate(BuiltinCatalog.CreateDefault());
+                Shutdown(0);
+                return;
+            }
+
             if (e.Args.Contains("--run", StringComparer.OrdinalIgnoreCase))
             {
                 StartConfiguredTerminal(e.Args);

@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using AiShellLauncher.Core.Models;
 
 namespace AiShellLauncher.Core.Services;
@@ -7,12 +8,6 @@ namespace AiShellLauncher.Core.Services;
 public sealed class ConfigService
 {
     public const int MenuSlotLimit = 16;
-
-    private static readonly JsonSerializerOptions SerializerOptions = new()
-    {
-        WriteIndented = true,
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-    };
 
     private readonly CommandResolver _commandResolver;
 
@@ -43,7 +38,7 @@ public sealed class ConfigService
         try
         {
             var json = File.ReadAllText(ConfigPath, Encoding.UTF8);
-            var config = JsonSerializer.Deserialize<LauncherConfig>(json, SerializerOptions)
+            var config = JsonSerializer.Deserialize(json, LauncherJsonContext.Default.LauncherConfig)
                 ?? throw new InvalidDataException("配置文件内容为空。");
             if (config.SchemaVersion is >= 1 and <= 3)
             {
@@ -65,7 +60,7 @@ public sealed class ConfigService
     {
         Validate(config);
         Directory.CreateDirectory(ConfigRoot);
-        var json = JsonSerializer.Serialize(config, SerializerOptions) + Environment.NewLine;
+        var json = JsonSerializer.Serialize(config, LauncherJsonContext.Default.LauncherConfig) + Environment.NewLine;
         WriteAtomically(ConfigPath, json, new UTF8Encoding(false));
         WriteMenuIndex(config);
     }
@@ -102,7 +97,7 @@ public sealed class ConfigService
             }
         }
 
-        WriteAtomically(MenuIndexPath, string.Join('\n', lines) + "\n", new UTF8Encoding(false));
+        WriteAtomically(MenuIndexPath, string.Join("\n", lines) + "\n", new UTF8Encoding(false));
     }
 
     public static void Validate(LauncherConfig config)
@@ -188,7 +183,11 @@ public sealed class ConfigService
 
     private static void ValidateIdentifier(string id, string label)
     {
-        if (string.IsNullOrWhiteSpace(id) || id.Any(character => !(char.IsAsciiLetterOrDigit(character) || character is '-' or '_')))
+        if (string.IsNullOrWhiteSpace(id) || id.Any(character => !(
+            (character >= 'a' && character <= 'z') ||
+            (character >= 'A' && character <= 'Z') ||
+            (character >= '0' && character <= '9') ||
+            character is '-' or '_')))
         {
             throw new InvalidDataException($"{label} 只能包含字母、数字、短横线和下划线：{id}");
         }
@@ -203,8 +202,23 @@ public sealed class ConfigService
     {
         var temporary = destination + ".tmp";
         File.WriteAllText(temporary, content, encoding);
-        File.Move(temporary, destination, true);
+        ReplaceFile(temporary, destination);
+    }
+
+    private static void ReplaceFile(string source, string destination)
+    {
+        if (File.Exists(destination))
+        {
+            File.Delete(destination);
+        }
+        File.Move(source, destination);
     }
 }
 
 public sealed record ConfigLoadResult(LauncherConfig Config, string? Warning);
+
+[JsonSourceGenerationOptions(
+    WriteIndented = true,
+    PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
+[JsonSerializable(typeof(LauncherConfig))]
+internal partial class LauncherJsonContext : JsonSerializerContext;

@@ -6,13 +6,17 @@ public static class ArgumentTemplates
 {
     public static IReadOnlyList<string> Expand(IEnumerable<string> arguments, string workingDirectory)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(workingDirectory);
-        return arguments.Select(argument => argument.Replace("{path}", workingDirectory, StringComparison.OrdinalIgnoreCase)).ToArray();
+        if (string.IsNullOrWhiteSpace(workingDirectory))
+        {
+            throw new ArgumentException("工作目录不能为空。", nameof(workingDirectory));
+        }
+
+        return arguments.Select(argument => TextCompatibility.ReplaceOrdinalIgnoreCase(argument, "{path}", workingDirectory)).ToArray();
     }
 
     public static string ToDisplayText(IEnumerable<string> arguments)
     {
-        return string.Join(' ', arguments.Select(QuoteForDisplay));
+        return string.Join(" ", arguments.Select(QuoteForDisplay));
     }
 
     public static IReadOnlyList<string> ParseDisplayText(string text)

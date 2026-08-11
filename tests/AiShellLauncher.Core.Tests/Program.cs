@@ -25,7 +25,7 @@ foreach (var test in tests)
     catch (Exception exception)
     {
         failures.Add($"FAIL {test.Name}: {exception.Message}");
-        Console.Error.WriteLine(failures[^1]);
+        Console.Error.WriteLine(failures[failures.Count - 1]);
     }
 }
 
@@ -85,7 +85,7 @@ static void TestConfigRoundTrip()
         True(loaded.Warning is null, "配置加载无警告");
         Equal("test", loaded.Config.Tools.Single().Id, "配置内容");
         var menu = File.ReadAllText(service.MenuIndexPath);
-        True(menu.Contains("C\t0\ttest\tnormal\t在 Test Tool 中打开\tNormal\t", StringComparison.Ordinal), "一级菜单记录");
+        True(menu.IndexOf("C\t0\ttest\tnormal\t在 Test Tool 中打开\tNormal\t", StringComparison.Ordinal) >= 0, "一级菜单记录");
     }
     finally
     {
@@ -164,13 +164,13 @@ static void TestMenuAppearance()
         var service = new ConfigService(root);
         service.Save(config);
         var menu = File.ReadAllText(service.MenuIndexPath);
-        True(menu.Contains("用 Codex 处理这个目录", StringComparison.Ordinal), "自定义菜单文案");
-        True(menu.Contains(Path.Combine("Runtime", "Icons", "codex.brand.ico"), StringComparison.OrdinalIgnoreCase), "Codex 内置图标");
+        True(menu.IndexOf("用 Codex 处理这个目录", StringComparison.Ordinal) >= 0, "自定义菜单文案");
+        True(menu.IndexOf(Path.Combine("Runtime", "Icons", "codex.brand.ico"), StringComparison.OrdinalIgnoreCase) >= 0, "Codex 内置图标");
 
         mode.IconPath = Path.Combine(Environment.SystemDirectory, "cmd.exe");
         service.Save(config);
         menu = File.ReadAllText(service.MenuIndexPath);
-        True(menu.Contains(mode.IconPath, StringComparison.OrdinalIgnoreCase), "自定义图标覆盖内置图标");
+        True(menu.IndexOf(mode.IconPath, StringComparison.OrdinalIgnoreCase) >= 0, "自定义图标覆盖内置图标");
     }
     finally
     {
@@ -261,7 +261,7 @@ static void TestTerminalLaunch()
         var systemDefault = service.CreateStartInfo(new TerminalDefinition(), runner, arguments, root);
         True(systemDefault.UseShellExecute, "系统默认终端使用 Windows 关联");
         Equal(runner, systemDefault.FileName, "系统默认终端启动组件");
-        Equal(arguments.Length, systemDefault.ArgumentList.Count, "系统默认终端参数");
+        Equal(arguments.Length, ArgumentTemplates.ParseDisplayText(systemDefault.Arguments).Count, "系统默认终端参数");
 
         var powerShell = service.CreateStartInfo(
             new TerminalDefinition { Kind = TerminalKind.PowerShell },
@@ -269,7 +269,7 @@ static void TestTerminalLaunch()
             arguments,
             root);
         True(powerShell.FileName.EndsWith("powershell.exe", StringComparison.OrdinalIgnoreCase), "PowerShell 打开方式");
-        True(powerShell.ArgumentList.Contains("-Command"), "PowerShell 命令参数");
+        True(ArgumentTemplates.ParseDisplayText(powerShell.Arguments).Contains("-Command"), "PowerShell 命令参数");
 
         var commandPrompt = service.CreateStartInfo(
             new TerminalDefinition { Kind = TerminalKind.CommandPrompt },
@@ -277,7 +277,7 @@ static void TestTerminalLaunch()
             arguments,
             root);
         True(commandPrompt.FileName.EndsWith("cmd.exe", StringComparison.OrdinalIgnoreCase), "命令提示符打开方式");
-        True(commandPrompt.Arguments.Contains(QuoteFragment(runner), StringComparison.Ordinal), "命令提示符包含启动组件");
+        True(commandPrompt.Arguments.IndexOf(QuoteFragment(runner), StringComparison.Ordinal) >= 0, "命令提示符包含启动组件");
 
         var custom = service.CreateStartInfo(
             new TerminalDefinition
@@ -289,9 +289,10 @@ static void TestTerminalLaunch()
             runner,
             arguments,
             root);
-        Equal(root, custom.ArgumentList[1], "自定义终端路径占位符");
-        Equal(runner, custom.ArgumentList[2], "自定义终端命令占位符");
-        Equal(arguments[0], custom.ArgumentList[3], "自定义终端参数占位符");
+        var customArguments = ArgumentTemplates.ParseDisplayText(custom.Arguments);
+        Equal(root, customArguments[1], "自定义终端路径占位符");
+        Equal(runner, customArguments[2], "自定义终端命令占位符");
+        Equal(arguments[0], customArguments[3], "自定义终端参数占位符");
     }
     finally
     {

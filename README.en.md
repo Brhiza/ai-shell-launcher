@@ -2,7 +2,7 @@
 
 [简体中文](README.md)
 
-AI Shell Launcher manages direct, top-level Windows 11 context-menu entries for AI command-line tools. Commands appear directly in the menu for folders, folder backgrounds, and the desktop instead of being nested under an `AI Shell Launcher` submenu.
+AI Shell Launcher manages direct, top-level Windows 10/11 x64 context-menu entries for AI command-line tools. Commands appear directly in the menu for folders, folder backgrounds, and the desktop instead of being nested under an `AI Shell Launcher` submenu.
 
 ## Features
 
@@ -10,8 +10,8 @@ AI Shell Launcher manages direct, top-level Windows 11 context-menu entries for 
 - Normal, Auto, YOLO, and custom argument modes.
 - Custom menu labels and icons.
 - System default terminal, Windows Terminal, PowerShell, Command Prompt, or a custom terminal.
-- Changes are applied directly to the Windows 11 modern context menu.
-- Distributed and run as a single EXE; no MSIX installer is required.
+- Detects the system automatically: Windows 10 uses the classic context menu and Windows 11 uses the modern context menu, with no manual selection.
+- Distributed as a single EXE of about 2 MB; no MSIX installer or separate .NET 8 runtime is required.
 
 ## Usage
 
@@ -20,7 +20,7 @@ AI Shell Launcher manages direct, top-level Windows 11 context-menu entries for 
 3. Select **Save and apply**. After the initial installation or a menu structure change, the app may ask to restart File Explorer.
 4. Right-click a folder, a folder background, or the desktop and select the command directly.
 
-Runtime components are installed for the current user under `%LOCALAPPDATA%\AiShellLauncher`. The Windows 11 modern context menu is registered internally with sparse packages, but the distributed application remains a single EXE rather than an MSIX installer.
+Windows 10 version 2004 (build 19041) or later and Windows 11 are supported. Runtime components are installed for the current user under `%LOCALAPPDATA%\AiShellLauncher`. Context menus are registered internally with sparse packages, but the distributed application remains a single EXE rather than an MSIX installer.
 
 > [!WARNING]
 > YOLO modes may bypass confirmation prompts or safety restrictions in the target tool and are disabled by default. Use them only when you understand the command and its effects.
@@ -35,7 +35,7 @@ To unregister the context menu while keeping your configuration:
 
 Requirements:
 
-- Windows 11 x64
+- Windows 10/11 x64
 - .NET 8 SDK
 - Visual Studio 2022 Build Tools with the **Desktop development with C++** workload
 
@@ -45,7 +45,7 @@ Run in PowerShell:
 .\scripts\build.ps1
 ```
 
-The script builds the managed solution, runs the core tests, compiles the native shell extension, and produces:
+The script builds the managed solution, runs the core tests, compiles the native shell extension, verifies the bundled resources, and produces:
 
 ```text
 artifacts\AiShellLauncher.exe

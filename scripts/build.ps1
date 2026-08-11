@@ -57,29 +57,19 @@ Reset-ProjectDirectory -Path $runtimeBundleRoot
     -OutputDirectory (Join-Path $projectRoot 'src\AiShellLauncher.App\Assets')
 
 $env:DOTNET_CLI_TELEMETRY_OPTOUT = '1'
-if (-not $SkipTests) {
-    & $dotnet build (Join-Path $projectRoot 'AiShellLauncher.sln') -c $Configuration
-    if ($LASTEXITCODE -ne 0) { throw '托管项目构建失败。' }
+& $dotnet build (Join-Path $projectRoot 'AiShellLauncher.sln') -c $Configuration
+if ($LASTEXITCODE -ne 0) { throw '托管项目构建失败。' }
 
+if (-not $SkipTests) {
     & $dotnet run --project (Join-Path $projectRoot 'tests\AiShellLauncher.Core.Tests\AiShellLauncher.Core.Tests.csproj') -c $Configuration --no-build
     if ($LASTEXITCODE -ne 0) { throw '核心测试失败。' }
 }
 
-$commonPublishArguments = @(
-    '-c', $Configuration,
-    '-r', 'win-x64',
-    '--self-contained', 'true',
-    '-p:PublishSingleFile=true',
-    '-p:IncludeNativeLibrariesForSelfExtract=true',
-    '-p:EnableCompressionInSingleFile=true',
-    '-p:DebugType=None',
-    '-p:DebugSymbols=false'
-)
-
-$runnerPublish = Join-Path $publishRoot 'runner'
-& $dotnet publish (Join-Path $projectRoot 'src\AiShellLauncher.Runner\AiShellLauncher.Runner.csproj') @commonPublishArguments -o $runnerPublish
-if ($LASTEXITCODE -ne 0) { throw 'Runner 发布失败。' }
-Copy-Item -LiteralPath (Join-Path $runnerPublish 'AiShellLauncher.Runner.exe') -Destination $runtimeBundleRoot
+$runnerExecutable = Join-Path $projectRoot "src\AiShellLauncher.Runner\bin\$Configuration\net48\AiShellLauncher.Runner.exe"
+if (-not (Test-Path -LiteralPath $runnerExecutable -PathType Leaf)) {
+    throw 'Runner 构建产物不存在。'
+}
+Copy-Item -LiteralPath $runnerExecutable -Destination $runtimeBundleRoot
 
 $environmentLines = & $env:ComSpec /d /s /c "`"$vcVars`" >nul && set"
 if ($LASTEXITCODE -ne 0) { throw '加载 Visual C++ 编译环境失败。' }
@@ -127,13 +117,25 @@ $manifestContent = (Get-Content -Raw -Encoding utf8 (Join-Path $projectRoot 'pac
 
 $appPublish = Join-Path $publishRoot 'app'
 $appProject = Join-Path $projectRoot 'src\AiShellLauncher.App\AiShellLauncher.App.csproj'
-& $dotnet publish $appProject @commonPublishArguments "-p:RuntimeBundleRoot=$runtimeBundleRoot" -o $appPublish
-if ($LASTEXITCODE -ne 0) { throw '设置程序发布失败。' }
+& $dotnet build $appProject `
+    -c $Configuration `
+    "-p:RuntimeBundleRoot=$runtimeBundleRoot" `
+    "-p:AssemblyVersion=$Version" `
+    "-p:FileVersion=$Version" `
+    '-p:DebugType=None' `
+    '-p:DebugSymbols=false' `
+    -o $appPublish
+if ($LASTEXITCODE -ne 0) { throw '设置程序构建失败。' }
 
 if (Test-Path -LiteralPath $outputPath -PathType Leaf) {
     [IO.File]::Delete($outputPath)
 }
 Copy-Item -LiteralPath (Join-Path $appPublish 'AiShellLauncher.exe') -Destination $outputPath
+
+$selfTest = Start-Process -FilePath $outputPath -ArgumentList '--self-test' -WindowStyle Hidden -Wait -PassThru
+if ($selfTest.ExitCode -ne 0) {
+    throw "单文件程序自检失败，退出码：$($selfTest.ExitCode)"
+}
 
 $buildInfo = [ordered]@{
     version = $Version

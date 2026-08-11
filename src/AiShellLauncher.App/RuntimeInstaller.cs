@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Security.Cryptography;
+using AiShellLauncher.Core.Services;
 
 namespace AiShellLauncher.App;
 
@@ -33,15 +34,48 @@ internal static class RuntimeInstaller
         "AiShellLauncher",
         "Runtime");
 
+    public static void VerifyEmbeddedPayload()
+    {
+        EnsureSupportedSystem();
+        var assembly = Assembly.GetExecutingAssembly();
+        foreach (var resource in RuntimeResources)
+        {
+            using var stream = assembly.GetManifestResourceStream(resource.ResourceName)
+                ?? throw new InvalidOperationException($"安装资源缺失：{resource.ResourceName}");
+            if (stream.Length == 0)
+            {
+                throw new InvalidOperationException($"安装资源为空：{resource.ResourceName}");
+            }
+        }
+
+        var manifest = ReadManifestTemplate();
+        if (!manifest.Contains("__SLOT__") || !manifest.Contains("__CLSID__"))
+        {
+            throw new InvalidDataException("右键菜单清单模板无效。");
+        }
+
+        using var notices = assembly.GetManifestResourceStream("Licenses.THIRD_PARTY_NOTICES.md")
+            ?? throw new InvalidOperationException("第三方许可声明未打包。");
+        if (notices.Length == 0)
+        {
+            throw new InvalidOperationException("第三方许可声明为空。");
+        }
+    }
+
     public static RuntimeInstallResult EnsureInstalled(int activeSlotCount, bool forceRegistration = false)
     {
+        EnsureSupportedSystem();
         if (activeSlotCount is < 0 or > MenuSlotCount)
         {
             throw new ArgumentOutOfRangeException(nameof(activeSlotCount));
         }
 
-        var sourceExecutable = Environment.ProcessPath
-            ?? throw new InvalidOperationException("无法确定 AI Shell Launcher 的运行路径。");
+        string sourceExecutable;
+        using (var currentProcess = Process.GetCurrentProcess())
+        {
+            sourceExecutable = currentProcess.MainModule?.FileName
+                ?? throw new InvalidOperationException("无法确定 AI Shell Launcher 的运行路径。");
+        }
         Directory.CreateDirectory(RuntimeRoot);
 
         var installedExecutable = Path.Combine(RuntimeRoot, "AiShellLauncher.exe");
@@ -58,7 +92,9 @@ internal static class RuntimeInstaller
         changed |= WriteMenuManifests();
 
         var markerPath = Path.Combine(RuntimeRoot, ".registered");
-        var marker = GetFileHash(installedExecutable) + Environment.NewLine + $"slots={activeSlotCount}" + Environment.NewLine;
+        var marker = GetFileHash(installedExecutable) + Environment.NewLine +
+            $"slots={activeSlotCount}" + Environment.NewLine +
+            $"menu={DetectMenuStyle()}" + Environment.NewLine;
         var registrationChanged = forceRegistration || changed || !File.Exists(markerPath) ||
             !string.Equals(File.ReadAllText(markerPath), marker, StringComparison.Ordinal);
         if (registrationChanged)
@@ -186,8 +222,8 @@ internal static class RuntimeInstaller
     private static string BuildManifest(string template, string slotText, string classId)
     {
         return template
-            .Replace("__SLOT__", slotText, StringComparison.Ordinal)
-            .Replace("__CLSID__", classId, StringComparison.Ordinal);
+            .Replace("__SLOT__", slotText)
+            .Replace("__CLSID__", classId);
     }
 
     private static bool WriteIfDifferent(string destination, string content)
@@ -201,7 +237,7 @@ internal static class RuntimeInstaller
         Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
         var temporary = destination + ".tmp";
         File.WriteAllBytes(temporary, bytes);
-        File.Move(temporary, destination, true);
+        ReplaceFile(temporary, destination);
         return true;
     }
 
@@ -230,15 +266,18 @@ internal static class RuntimeInstaller
             RedirectStandardOutput = true,
             RedirectStandardError = true
         };
-        startInfo.Environment["ASL_LEGACY_PACKAGE"] = LegacyPackageName;
-        startInfo.Environment["ASL_RUNTIME_ROOT"] = RuntimeRoot;
-        startInfo.Environment["ASL_ACTIVE_SLOTS"] = activeSlotCount.ToString(System.Globalization.CultureInfo.InvariantCulture);
-        startInfo.ArgumentList.Add("-NoProfile");
-        startInfo.ArgumentList.Add("-NonInteractive");
-        startInfo.ArgumentList.Add("-ExecutionPolicy");
-        startInfo.ArgumentList.Add("Bypass");
-        startInfo.ArgumentList.Add("-Command");
-        startInfo.ArgumentList.Add(command);
+        startInfo.EnvironmentVariables["ASL_LEGACY_PACKAGE"] = LegacyPackageName;
+        startInfo.EnvironmentVariables["ASL_RUNTIME_ROOT"] = RuntimeRoot;
+        startInfo.EnvironmentVariables["ASL_ACTIVE_SLOTS"] = activeSlotCount.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        startInfo.Arguments = WindowsCommandLine.Join(new[]
+        {
+            "-NoProfile",
+            "-NonInteractive",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-Command",
+            command
+        });
         using var process = Process.Start(startInfo)
             ?? throw new InvalidOperationException("无法启动 Windows PowerShell 完成右键菜单注册。");
         var outputTask = process.StandardOutput.ReadToEndAsync();
@@ -266,7 +305,7 @@ internal static class RuntimeInstaller
         Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
         var temporary = destination + ".tmp";
         File.Copy(source, temporary, true);
-        File.Move(temporary, destination, true);
+        ReplaceFile(temporary, destination);
         return true;
     }
 
@@ -286,7 +325,7 @@ internal static class RuntimeInstaller
         {
             resource.CopyTo(output);
         }
-        File.Move(temporary, destination, true);
+        ReplaceFile(temporary, destination);
         return true;
     }
 
@@ -297,7 +336,7 @@ internal static class RuntimeInstaller
         using var file = File.OpenRead(destination);
         using var destinationHash = SHA256.Create();
         var actual = destinationHash.ComputeHash(file);
-        return CryptographicOperations.FixedTimeEquals(expected, actual);
+        return expected.SequenceEqual(actual);
     }
 
     private static bool FilesMatch(string first, string second)
@@ -308,6 +347,30 @@ internal static class RuntimeInstaller
     private static string GetFileHash(string path)
     {
         using var stream = File.OpenRead(path);
-        return Convert.ToHexString(SHA256.HashData(stream));
+        using var sha256 = SHA256.Create();
+        return BitConverter.ToString(sha256.ComputeHash(stream)).Replace("-", string.Empty);
+    }
+
+    private static void ReplaceFile(string source, string destination)
+    {
+        if (File.Exists(destination))
+        {
+            File.Delete(destination);
+        }
+        File.Move(source, destination);
+    }
+
+    private static void EnsureSupportedSystem()
+    {
+        var version = Environment.OSVersion.Version;
+        if (version.Major < 10 || (version.Major == 10 && version.Build < 19041))
+        {
+            throw new PlatformNotSupportedException("需要 Windows 10 版本 2004 或更高版本，或 Windows 11。");
+        }
+    }
+
+    private static string DetectMenuStyle()
+    {
+        return Environment.OSVersion.Version.Build >= 22000 ? "modern" : "classic";
     }
 }

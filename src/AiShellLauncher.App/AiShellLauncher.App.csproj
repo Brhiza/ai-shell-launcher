@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net8.0-windows</TargetFramework>
+    <TargetFramework>net48</TargetFramework>
     <UseWPF>true</UseWPF>
     <AssemblyName>AiShellLauncher</AssemblyName>
     <RootNamespace>AiShellLauncher.App</RootNamespace>
@@ -10,9 +10,13 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\AiShellLauncher.Core\AiShellLauncher.Core.csproj" />
+    <PackageReference Include="Fody" Version="6.8.2" PrivateAssets="all" />
+    <PackageReference Include="Costura.Fody" Version="6.0.0" PrivateAssets="all" />
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Assets\Logo.ico" />
+    <EmbeddedResource Include="..\..\THIRD_PARTY_NOTICES.md" LogicalName="Licenses.THIRD_PARTY_NOTICES.md" />
+    <EmbeddedResource Include="..\..\licenses\*.txt" LogicalName="Licenses.%(Filename)%(Extension)" />
   </ItemGroup>
   <ItemGroup Condition="'$(RuntimeBundleRoot)' != ''">
     <EmbeddedResource Include="$(RuntimeBundleRoot)\AiShellLauncher.Runner.exe" LogicalName="Runtime.AiShellLauncher.Runner.exe" />

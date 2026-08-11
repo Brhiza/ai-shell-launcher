@@ -11,3 +11,4 @@ artifacts/
 *.obj
 *.lib
 *.exp
+**/FodyWeavers.xsd

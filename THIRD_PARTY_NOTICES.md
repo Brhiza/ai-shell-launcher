@@ -29,3 +29,14 @@ SOFTWARE.
 ```
 
 第三方项目名称、标志和商标归各自所有者所有。它们仅用于帮助用户识别兼容命令，不表示 AI Shell Launcher 与相应所有者存在隶属、认可或赞助关系。
+
+## .NET Libraries
+
+程序内嵌的 `System.Text.Json` 及其依赖由 .NET Foundation 和贡献者根据 MIT License 提供。完整许可与第三方声明见：
+
+- [licenses/DotNet-LICENSE.txt](licenses/DotNet-LICENSE.txt)
+- [licenses/DotNet-THIRD-PARTY-NOTICES.txt](licenses/DotNet-THIRD-PARTY-NOTICES.txt)
+
+## Fody 与 Costura.Fody
+
+构建过程使用 [Fody](https://github.com/Fody/Fody) 和 [Costura.Fody](https://github.com/Fody/Costura) 将运行依赖打包进单个 EXE。两者均采用 MIT License。Fody 的完整许可见 [licenses/Fody-LICENSE.txt](licenses/Fody-LICENSE.txt)，Costura.Fody 的完整许可见 [licenses/Costura-LICENSE.txt](licenses/Costura-LICENSE.txt)。

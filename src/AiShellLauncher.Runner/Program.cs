@@ -32,7 +32,7 @@ try
     }
 
     using var process = new LaunchService().Start(plan);
-    await process.WaitForExitAsync();
+    process.WaitForExit();
     return process.ExitCode;
 }
 catch (Exception exception) when (exception is ArgumentException or InvalidOperationException or IOException)
@@ -83,7 +83,7 @@ static RunnerOptions ParseArguments(string[] arguments)
         throw new ArgumentException("用法：AiShellLauncher.Runner --launch <工具 ID> --mode <模式 ID> --path <文件夹>");
     }
 
-    return new RunnerOptions(toolId, modeId, path);
+    return new RunnerOptions(toolId!, modeId!, path!);
 }
 
 internal sealed record RunnerOptions(string ToolId, string ModeId, string WorkingDirectory);

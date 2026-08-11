@@ -59,7 +59,7 @@ public sealed class CommandResolver
     {
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var pathValue = Environment.GetEnvironmentVariable("PATH") ?? string.Empty;
-        foreach (var segment in pathValue.Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        foreach (var segment in pathValue.Split(new[] { Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries).Select(value => value.Trim()))
         {
             var expanded = Environment.ExpandEnvironmentVariables(segment.Trim('"'));
             if (Directory.Exists(expanded) && seen.Add(expanded))

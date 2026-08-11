@@ -45,7 +45,7 @@ public partial class ToolEditorDialog : Window
 
     private void AddMode_Click(object sender, RoutedEventArgs e)
     {
-        var suffix = Guid.NewGuid().ToString("N")[..6];
+        var suffix = Guid.NewGuid().ToString("N").Substring(0, 6);
         Tool.Modes.Add(new ModeEditorViewModel(new ModeDefinition
         {
             Id = $"custom-{suffix}",

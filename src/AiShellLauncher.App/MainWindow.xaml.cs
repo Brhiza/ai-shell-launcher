@@ -33,7 +33,7 @@ public partial class MainWindow : Window
 
     private void AddTool_Click(object sender, RoutedEventArgs e)
     {
-        var suffix = Guid.NewGuid().ToString("N")[..8];
+        var suffix = Guid.NewGuid().ToString("N").Substring(0, 8);
         var tool = new ToolEditorViewModel(new ToolDefinition
         {
             Id = $"custom-{suffix}",

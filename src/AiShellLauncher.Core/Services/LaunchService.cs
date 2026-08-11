@@ -60,17 +60,16 @@ public sealed class LaunchService
             {
                 FileName = Path.Combine(Environment.SystemDirectory, "WindowsPowerShell", "v1.0", "powershell.exe"),
                 WorkingDirectory = plan.WorkingDirectory,
-                UseShellExecute = false
+                UseShellExecute = false,
+                Arguments = WindowsCommandLine.Join(new[]
+                {
+                    "-NoProfile",
+                    "-ExecutionPolicy",
+                    "Bypass",
+                    "-File",
+                    plan.Executable
+                }.Concat(plan.Arguments))
             };
-            startInfo.ArgumentList.Add("-NoProfile");
-            startInfo.ArgumentList.Add("-ExecutionPolicy");
-            startInfo.ArgumentList.Add("Bypass");
-            startInfo.ArgumentList.Add("-File");
-            startInfo.ArgumentList.Add(plan.Executable);
-            foreach (var argument in plan.Arguments)
-            {
-                startInfo.ArgumentList.Add(argument);
-            }
         }
         else
         {
@@ -78,12 +77,9 @@ public sealed class LaunchService
             {
                 FileName = plan.Executable,
                 WorkingDirectory = plan.WorkingDirectory,
-                UseShellExecute = false
+                UseShellExecute = false,
+                Arguments = WindowsCommandLine.Join(plan.Arguments)
             };
-            foreach (var argument in plan.Arguments)
-            {
-                startInfo.ArgumentList.Add(argument);
-            }
         }
 
         return Process.Start(startInfo) ?? throw new InvalidOperationException($"无法启动：{plan.Executable}");
@@ -93,12 +89,12 @@ public sealed class LaunchService
     {
         var parts = new List<string> { QuoteCmdArgument(executable) };
         parts.AddRange(arguments.Select(QuoteCmdArgument));
-        return string.Join(' ', parts);
+        return string.Join(" ", parts);
     }
 
     private static string QuoteCmdArgument(string value)
     {
-        var escaped = value.Replace("%", "%%", StringComparison.Ordinal).Replace("\"", "\"\"", StringComparison.Ordinal);
+        var escaped = value.Replace("%", "%%").Replace("\"", "\"\"");
         var result = new StringBuilder(escaped.Length + 2);
         result.Append('"');
         result.Append(escaped);

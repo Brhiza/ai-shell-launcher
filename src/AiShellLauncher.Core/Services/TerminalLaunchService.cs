@@ -59,9 +59,9 @@ public sealed class TerminalLaunchService
         {
             FileName = runnerPath,
             WorkingDirectory = workingDirectory,
-            UseShellExecute = true
+            UseShellExecute = true,
+            Arguments = WindowsCommandLine.Join(runnerArguments)
         };
-        AddArguments(startInfo, runnerArguments);
         return startInfo;
     }
 
@@ -76,12 +76,9 @@ public sealed class TerminalLaunchService
         {
             FileName = executable,
             WorkingDirectory = workingDirectory,
-            UseShellExecute = false
+            UseShellExecute = false,
+            Arguments = WindowsCommandLine.Join(new[] { "-d", workingDirectory, runnerPath }.Concat(runnerArguments))
         };
-        startInfo.ArgumentList.Add("-d");
-        startInfo.ArgumentList.Add(workingDirectory);
-        startInfo.ArgumentList.Add(runnerPath);
-        AddArguments(startInfo, runnerArguments);
         return startInfo;
     }
 
@@ -95,12 +92,15 @@ public sealed class TerminalLaunchService
         {
             FileName = executable,
             WorkingDirectory = workingDirectory,
-            UseShellExecute = false
+            UseShellExecute = false,
+            Arguments = WindowsCommandLine.Join(new[]
+            {
+                "-NoLogo",
+                "-NoProfile",
+                "-Command",
+                BuildPowerShellCommand(runnerPath, runnerArguments)
+            })
         };
-        startInfo.ArgumentList.Add("-NoLogo");
-        startInfo.ArgumentList.Add("-NoProfile");
-        startInfo.ArgumentList.Add("-Command");
-        startInfo.ArgumentList.Add(BuildPowerShellCommand(runnerPath, runnerArguments));
         return startInfo;
     }
 
@@ -127,54 +127,48 @@ public sealed class TerminalLaunchService
     {
         var executable = _commandResolver.Resolve(terminal.Command)
             ?? throw new FileNotFoundException($"没有找到自定义终端：{terminal.Command}");
-        var startInfo = new ProcessStartInfo
-        {
-            FileName = executable,
-            WorkingDirectory = workingDirectory,
-            UseShellExecute = false
-        };
-
+        var arguments = new List<string>();
         foreach (var template in terminal.Arguments)
         {
             if (template.Equals("{args}", StringComparison.OrdinalIgnoreCase))
             {
-                AddArguments(startInfo, runnerArguments);
+                arguments.AddRange(runnerArguments);
                 continue;
             }
 
-            startInfo.ArgumentList.Add(template
-                .Replace("{command}", runnerPath, StringComparison.OrdinalIgnoreCase)
-                .Replace("{path}", workingDirectory, StringComparison.OrdinalIgnoreCase));
+            arguments.Add(TextCompatibility.ReplaceOrdinalIgnoreCase(
+                TextCompatibility.ReplaceOrdinalIgnoreCase(template, "{command}", runnerPath),
+                "{path}",
+                workingDirectory));
         }
-        return startInfo;
-    }
 
-    private static void AddArguments(ProcessStartInfo startInfo, IEnumerable<string> arguments)
-    {
-        foreach (var argument in arguments)
+        return new ProcessStartInfo
         {
-            startInfo.ArgumentList.Add(argument);
-        }
+            FileName = executable,
+            WorkingDirectory = workingDirectory,
+            UseShellExecute = false,
+            Arguments = WindowsCommandLine.Join(arguments)
+        };
     }
 
     private static string BuildPowerShellCommand(string runnerPath, IEnumerable<string> arguments)
     {
-        return "& " + string.Join(' ', new[] { runnerPath }.Concat(arguments).Select(QuotePowerShellArgument));
+        return "& " + string.Join(" ", new[] { runnerPath }.Concat(arguments).Select(QuotePowerShellArgument));
     }
 
     private static string QuotePowerShellArgument(string value)
     {
-        return "'" + value.Replace("'", "''", StringComparison.Ordinal) + "'";
+        return "'" + value.Replace("'", "''") + "'";
     }
 
     private static string BuildCmdCommandLine(string runnerPath, IEnumerable<string> arguments)
     {
-        return string.Join(' ', new[] { runnerPath }.Concat(arguments).Select(QuoteCmdArgument));
+        return string.Join(" ", new[] { runnerPath }.Concat(arguments).Select(QuoteCmdArgument));
     }
 
     private static string QuoteCmdArgument(string value)
     {
-        var escaped = value.Replace("%", "%%", StringComparison.Ordinal).Replace("\"", "\"\"", StringComparison.Ordinal);
+        var escaped = value.Replace("%", "%%").Replace("\"", "\"\"");
         var result = new StringBuilder(escaped.Length + 2);
         result.Append('"');
         result.Append(escaped);
