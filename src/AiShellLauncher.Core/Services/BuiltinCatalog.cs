@@ -6,7 +6,7 @@ public static class BuiltinCatalog
 {
     private static readonly HashSet<string> BuiltinToolIds = new(StringComparer.OrdinalIgnoreCase)
     {
-        "codex", "claude", "gemini", "grok", "opencode", "openclaw", "hermes"
+        "codex", "claude", "antigravity", "grok", "opencode", "openclaw", "hermes"
     };
 
     public static string? GetDefaultIconPath(string toolId)
@@ -41,10 +41,10 @@ public static class BuiltinCatalog
                     Mode("auto", "Auto", RiskLevel.Automatic, "--permission-mode", "auto"),
                     Mode("yolo", "YOLO", RiskLevel.Yolo, "--dangerously-skip-permissions")),
 
-                Tool("gemini", "Gemini CLI", "gemini",
-                    Mode("normal", "普通", RiskLevel.Normal, "--approval-mode", "default"),
-                    Mode("auto", "Auto", RiskLevel.Automatic, "--approval-mode", "auto_edit"),
-                    Mode("yolo", "YOLO", RiskLevel.Yolo, "--yolo")),
+                Tool("antigravity", "Antigravity CLI", "agy",
+                    Mode("normal", "普通", RiskLevel.Normal),
+                    Mode("auto", "Auto", RiskLevel.Automatic, "--mode", "accept-edits"),
+                    Mode("yolo", "YOLO", RiskLevel.Yolo, "--dangerously-skip-permissions")),
 
                 Tool("grok", "Grok Build", "grok",
                     Mode("normal", "普通", RiskLevel.Normal),

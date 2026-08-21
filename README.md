@@ -8,7 +8,7 @@
 
 ## 功能
 
-- 支持 Codex、Claude Code、Gemini CLI、Grok Build、OpenCode、OpenClaw、Hermes 和自定义命令。
+- 支持 Codex、Claude Code、Antigravity CLI、Grok Build、OpenCode、OpenClaw、Hermes 和自定义命令。
 - 支持普通、Auto、YOLO 和自定义参数。
 - 自定义菜单文字、图标和终端。
 - 自动适配经典右键菜单和现代右键菜单。

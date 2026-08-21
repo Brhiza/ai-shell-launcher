@@ -22,7 +22,7 @@ internal static class RuntimeInstaller
         ("Runtime.Assets.Logo.png", Path.Combine("Assets", "Logo.png")),
         ("Runtime.Icons.codex.ico", Path.Combine("Icons", "codex.brand.ico")),
         ("Runtime.Icons.claude.ico", Path.Combine("Icons", "claude.brand.ico")),
-        ("Runtime.Icons.gemini.ico", Path.Combine("Icons", "gemini.brand.ico")),
+        ("Runtime.Icons.antigravity.ico", Path.Combine("Icons", "antigravity.brand.ico")),
         ("Runtime.Icons.grok.ico", Path.Combine("Icons", "grok.brand.ico")),
         ("Runtime.Icons.opencode.ico", Path.Combine("Icons", "opencode.brand.ico")),
         ("Runtime.Icons.openclaw.ico", Path.Combine("Icons", "openclaw.brand.ico")),

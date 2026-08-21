@@ -8,7 +8,7 @@ Launch AI command-line tools directly from the Windows 10/11 context menu.
 
 ## Features
 
-- Codex, Claude Code, Gemini CLI, Grok Build, OpenCode, OpenClaw, Hermes, and custom commands.
+- Codex, Claude Code, Antigravity CLI, Grok Build, OpenCode, OpenClaw, Hermes, and custom commands.
 - Normal, Auto, YOLO, and custom arguments.
 - Custom menu labels, icons, and terminals.
 - Automatic classic and modern context-menu support.

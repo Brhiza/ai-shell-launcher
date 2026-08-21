@@ -42,6 +42,8 @@ static void TestBuiltinCatalog()
     True(!codex.Modes.Single(mode => mode.Id == "yolo").Enabled, "YOLO 默认停用");
     var openCode = config.Tools.Single(tool => tool.Id == "opencode");
     True(openCode.Modes.Any(mode => mode.Arguments.Contains("--auto") && mode.Risk == RiskLevel.Yolo), "OpenCode 高风险自动批准");
+    var antigravity = config.Tools.Single(tool => tool.Id == "antigravity");
+    True(antigravity.Modes.Any(mode => mode.Id == "yolo" && mode.Arguments.Contains("--dangerously-skip-permissions")), "Antigravity YOLO 参数");
 }
 
 static void TestArgumentRoundTrip()

@@ -9,7 +9,7 @@ $sourceRoot = Join-Path $projectRoot 'assets\builtin'
 $resolvedOutput = [IO.Path]::GetFullPath($OutputDirectory)
 [IO.Directory]::CreateDirectory($resolvedOutput) | Out-Null
 
-foreach ($name in @('codex', 'claude', 'gemini', 'grok', 'opencode', 'openclaw', 'hermes')) {
+foreach ($name in @('codex', 'claude', 'antigravity', 'grok', 'opencode', 'openclaw', 'hermes')) {
     $source = Join-Path $sourceRoot ($name + '.png')
     if (-not (Test-Path -LiteralPath $source -PathType Leaf)) {
         throw "缺少内置工具图标：$source"

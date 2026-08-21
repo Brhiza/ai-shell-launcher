@@ -4,7 +4,7 @@
 
 - Codex：CC Switch `src/icons/extracted/openai.svg`
 - Claude Code：CC Switch `src/icons/extracted/claude.svg`
-- Gemini CLI：CC Switch `src/icons/extracted/gemini.svg`
+- Gemini / Antigravity CLI：CC Switch `src/icons/extracted/gemini.svg`
 - Grok Build：CC Switch `src/icons/extracted/grok.svg`
 - OpenCode：CC Switch `src/icons/extracted/opencode-logo-light.svg`
 - OpenClaw：CC Switch `src/icons/extracted/claw.svg`
