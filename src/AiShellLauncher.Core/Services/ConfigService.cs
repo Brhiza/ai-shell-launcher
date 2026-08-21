@@ -40,9 +40,18 @@ public sealed class ConfigService
             var json = File.ReadAllText(ConfigPath, Encoding.UTF8);
             var config = JsonSerializer.Deserialize(json, LauncherJsonContext.Default.LauncherConfig)
                 ?? throw new InvalidDataException("配置文件内容为空。");
+            var changed = false;
             if (config.SchemaVersion is >= 1 and <= 3)
             {
                 MigrateToVersion4(config);
+                changed = true;
+            }
+            if (MigrateLegacyBuiltins(config))
+            {
+                changed = true;
+            }
+            if (changed)
+            {
                 Save(config);
                 return new ConfigLoadResult(config, null);
             }
@@ -179,6 +188,58 @@ public sealed class ConfigService
                 }
             }
         }
+    }
+
+    private static bool MigrateLegacyBuiltins(LauncherConfig config)
+    {
+        var changed = false;
+        foreach (var tool in config.Tools)
+        {
+            if (string.Equals(tool.Id, "gemini", StringComparison.OrdinalIgnoreCase))
+            {
+                tool.Id = "antigravity";
+                tool.Name = "Antigravity CLI";
+                if (string.Equals(tool.Command, "gemini", StringComparison.OrdinalIgnoreCase))
+                {
+                    tool.Command = "agy";
+                }
+                tool.IsBuiltIn = true;
+                foreach (var mode in tool.Modes)
+                {
+                    if (mode.Id.Equals("normal", StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (mode.Arguments.SequenceEqual(new[] { "--approval-mode", "default" }))
+                        {
+                            mode.Arguments = [];
+                        }
+                    }
+                    else if (mode.Id.Equals("auto", StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (mode.Arguments.SequenceEqual(new[] { "--approval-mode", "auto_edit" }))
+                        {
+                            mode.Arguments = ["--mode", "accept-edits"];
+                        }
+                    }
+                    else if (mode.Id.Equals("yolo", StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (mode.Arguments.SequenceEqual(new[] { "--yolo" }))
+                        {
+                            mode.Arguments = ["--dangerously-skip-permissions"];
+                        }
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(mode.MenuTitle))
+                    {
+                        mode.MenuTitle = mode.MenuTitle
+                            .Replace("Gemini CLI", "Antigravity CLI")
+                            .Replace("Gemini", "Antigravity CLI");
+                    }
+                }
+                changed = true;
+            }
+        }
+
+        return changed;
     }
 
     private static void ValidateIdentifier(string id, string label)

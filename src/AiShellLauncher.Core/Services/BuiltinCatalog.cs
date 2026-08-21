@@ -11,6 +11,12 @@ public static class BuiltinCatalog
 
     public static string? GetDefaultIconPath(string toolId)
     {
+        if (string.Equals(toolId, "agy", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(toolId, "gemini", StringComparison.OrdinalIgnoreCase))
+        {
+            toolId = "antigravity";
+        }
+
         if (!BuiltinToolIds.Contains(toolId))
         {
             return null;

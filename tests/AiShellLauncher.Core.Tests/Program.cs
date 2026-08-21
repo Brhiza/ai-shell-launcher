@@ -11,7 +11,8 @@ var tests = new (string Name, Action Run)[]
     ("内置图标和自定义文案", TestMenuAppearance),
     ("启动计划", TestLaunchPlan),
     ("真实命令启动", TestCommandStart),
-    ("终端打开方式", TestTerminalLaunch)
+    ("终端打开方式", TestTerminalLaunch),
+    ("旧配置迁移", TestLegacyGeminiMigration)
 };
 
 var failures = new List<string>();
@@ -295,6 +296,61 @@ static void TestTerminalLaunch()
         Equal(root, customArguments[1], "自定义终端路径占位符");
         Equal(runner, customArguments[2], "自定义终端命令占位符");
         Equal(arguments[0], customArguments[3], "自定义终端参数占位符");
+    }
+    finally
+    {
+        Directory.Delete(root, true);
+    }
+}
+
+static void TestLegacyGeminiMigration()
+{
+    var root = Path.Combine(Path.GetTempPath(), "AiShellLauncher.Tests", Guid.NewGuid().ToString("N"));
+    Directory.CreateDirectory(root);
+    try
+    {
+        var legacyJson = @"{
+  ""schemaVersion"": 4,
+  ""tools"": [
+    {
+      ""id"": ""gemini"",
+      ""name"": ""Gemini CLI"",
+      ""command"": ""gemini"",
+      ""enabled"": true,
+      ""isBuiltIn"": true,
+      ""modes"": [
+        {
+          ""id"": ""normal"",
+          ""name"": ""普通"",
+          ""menuTitle"": ""在 Gemini CLI 中打开"",
+          ""iconPath"": """",
+          ""enabled"": true,
+          ""risk"": ""Normal"",
+          ""arguments"": [""--approval-mode"", ""default""]
+        },
+        {
+          ""id"": ""yolo"",
+          ""name"": ""YOLO"",
+          ""menuTitle"": ""把爱留给 Gemini CLI"",
+          ""iconPath"": """",
+          ""enabled"": true,
+          ""risk"": ""Yolo"",
+          ""arguments"": [""--yolo""]
+        }
+      ]
+    }
+  ]
+}";
+        File.WriteAllText(Path.Combine(root, "config.json"), legacyJson);
+        var service = new ConfigService(root);
+        var loaded = service.LoadOrCreate();
+        var antigravity = loaded.Config.Tools.Single(t => t.Id == "antigravity");
+        Equal("Antigravity CLI", antigravity.Name, "旧工具名称迁移");
+        Equal("agy", antigravity.Command, "旧工具命令迁移");
+        True(antigravity.Modes.Single(m => m.Id == "yolo").MenuTitle.Contains("Antigravity CLI"), "菜单标题迁移");
+        True(antigravity.Modes.Single(m => m.Id == "yolo").Arguments.Contains("--dangerously-skip-permissions"), "YOLO参数迁移");
+        True(BuiltinCatalog.GetDefaultIconPath("gemini") != null, "兼容旧工具ID获取图标");
+        True(BuiltinCatalog.GetDefaultIconPath("agy") != null, "兼容agy ID获取图标");
     }
     finally
     {
