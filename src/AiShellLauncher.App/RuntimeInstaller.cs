@@ -13,10 +13,11 @@ internal static class RuntimeInstaller
     private const int MenuSlotCount = 16;
     private const string LegacyPackageName = "AiShellLauncher.Local";
     private const string ManifestResourceName = "Runtime.MenuPackageManifest.xml";
+    private const string RunnerResourceName = "Runtime.AiShellLauncher.Runner.exe";
+    private static readonly Lazy<string> RunnerFileName = new(CreateRunnerFileName);
 
     private static readonly (string ResourceName, string RelativePath)[] RuntimeResources =
     [
-        ("Runtime.AiShellLauncher.Runner.exe", "AiShellLauncher.Runner.exe"),
         ("Runtime.AiShellLauncher.ShellExtension.dll", "AiShellLauncher.ShellExtension.dll"),
         ("Runtime.Assets.Logo.ico", Path.Combine("Assets", "Logo.ico")),
         ("Runtime.Assets.Logo.png", Path.Combine("Assets", "Logo.png")),
@@ -34,10 +35,18 @@ internal static class RuntimeInstaller
         "AiShellLauncher",
         "Runtime");
 
+    public static string RunnerPath => Path.Combine(RuntimeRoot, RunnerFileName.Value);
+
     public static void VerifyEmbeddedPayload()
     {
         EnsureSupportedSystem();
         var assembly = Assembly.GetExecutingAssembly();
+        using var runner = assembly.GetManifestResourceStream(RunnerResourceName)
+            ?? throw new InvalidOperationException($"安装资源缺失：{RunnerResourceName}");
+        if (runner.Length == 0)
+        {
+            throw new InvalidDataException($"安装资源为空：{RunnerResourceName}");
+        }
         foreach (var resource in RuntimeResources)
         {
             using var stream = assembly.GetManifestResourceStream(resource.ResourceName)
@@ -80,6 +89,7 @@ internal static class RuntimeInstaller
 
         var installedExecutable = Path.Combine(RuntimeRoot, "AiShellLauncher.exe");
         var changed = CopyIfDifferent(sourceExecutable, installedExecutable);
+        changed |= ExtractIfDifferent(RunnerResourceName, RunnerPath);
         foreach (var resource in RuntimeResources)
         {
             changed |= ExtractIfDifferent(resource.ResourceName, Path.Combine(RuntimeRoot, resource.RelativePath));
@@ -349,6 +359,15 @@ internal static class RuntimeInstaller
         using var stream = File.OpenRead(path);
         using var sha256 = SHA256.Create();
         return BitConverter.ToString(sha256.ComputeHash(stream)).Replace("-", string.Empty);
+    }
+
+    private static string CreateRunnerFileName()
+    {
+        using var resource = Assembly.GetExecutingAssembly().GetManifestResourceStream(RunnerResourceName)
+            ?? throw new InvalidOperationException($"安装资源缺失：{RunnerResourceName}");
+        using var sha256 = SHA256.Create();
+        var hash = BitConverter.ToString(sha256.ComputeHash(resource)).Replace("-", string.Empty);
+        return $"AiShellLauncher.Runner.{hash}.exe";
     }
 
     private static void ReplaceFile(string source, string destination)

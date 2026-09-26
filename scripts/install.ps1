@@ -23,7 +23,7 @@ $arguments = @('--install')
 if (-not $SkipExplorerRestart) {
     $arguments += '--restart-explorer'
 }
-& $executable @arguments
-if ($LASTEXITCODE -ne 0) { throw '右键菜单安装失败。' }
+$process = Start-Process -FilePath $executable -ArgumentList $arguments -Wait -PassThru
+if ($process.ExitCode -ne 0) { throw "右键菜单安装失败，退出码：$($process.ExitCode)" }
 
 Write-Host 'AI Shell Launcher 已安装。' -ForegroundColor Green
