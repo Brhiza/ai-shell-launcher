@@ -17,8 +17,8 @@ $arguments = @('--uninstall')
 if (-not $SkipExplorerRestart) {
     $arguments += '--restart-explorer'
 }
-& $executable @arguments
-if ($LASTEXITCODE -ne 0) { throw '右键菜单卸载失败。' }
+$process = Start-Process -FilePath $executable -ArgumentList $arguments -Wait -PassThru
+if ($process.ExitCode -ne 0) { throw "右键菜单卸载失败，退出码：$($process.ExitCode)" }
 
 if ($RemoveUserData) {
     $configRoot = [IO.Path]::GetFullPath((Join-Path ([Environment]::GetFolderPath('LocalApplicationData')) 'AiShellLauncher'))

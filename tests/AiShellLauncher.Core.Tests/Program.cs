@@ -10,6 +10,7 @@ var tests = new (string Name, Action Run)[]
     ("Windows 命令解析", TestCommandResolver),
     ("内置图标和自定义文案", TestMenuAppearance),
     ("启动计划", TestLaunchPlan),
+    ("提权时 Codex 绕过共享后台服务", TestElevatedCodexPlan),
     ("真实命令启动", TestCommandStart),
     ("终端打开方式", TestTerminalLaunch),
     ("旧配置迁移", TestLegacyGeminiMigration)
@@ -211,6 +212,33 @@ static void TestLaunchPlan()
     var plan = new LaunchService().CreatePlan(config, "cmd", "normal", workingDirectory);
     Equal(Path.GetFullPath(workingDirectory), plan.WorkingDirectory, "工作目录");
     Equal(Path.GetFullPath(workingDirectory), plan.Arguments[2], "启动参数路径");
+}
+
+static void TestElevatedCodexPlan()
+{
+    var config = BuiltinCatalog.CreateDefault();
+    var codex = config.Tools.Single(tool => tool.Id == "codex");
+    codex.Command = Path.Combine(Environment.SystemDirectory, "cmd.exe");
+    codex.Modes.Single(mode => mode.Id == "yolo").Enabled = true;
+    var workingDirectory = Path.GetTempPath();
+
+    var elevatedLauncher = new LaunchService(isElevated: () => true);
+    var elevated = elevatedLauncher.CreatePlan(config, "codex", "yolo", workingDirectory);
+    Equal("--no-daemon", elevated.Arguments[0], "提权时绕过共享后台服务");
+    True(elevated.Arguments.Contains("--yolo"), "保留原有 Codex 模式参数");
+    elevated = elevatedLauncher.CreatePlan(config, "codex", "normal", workingDirectory);
+    Equal("--no-daemon", elevated.Arguments[0], "普通模式提权时绕过共享后台服务");
+
+    var normal = new LaunchService(isElevated: () => false).CreatePlan(config, "codex", "yolo", workingDirectory);
+    True(!normal.Arguments.Contains("--no-daemon"), "普通权限下保持共享后台服务");
+
+    codex.Modes.Single(mode => mode.Id == "yolo").Arguments.Insert(0, "--no-daemon");
+    elevated = elevatedLauncher.CreatePlan(config, "codex", "yolo", workingDirectory);
+    Equal(1, elevated.Arguments.Count(argument => argument == "--no-daemon"), "不重复添加参数");
+
+    codex.IsBuiltIn = false;
+    elevated = elevatedLauncher.CreatePlan(config, "codex", "normal", workingDirectory);
+    True(!elevated.Arguments.Contains("--no-daemon"), "自定义工具参数不变");
 }
 
 static void TestCommandStart()

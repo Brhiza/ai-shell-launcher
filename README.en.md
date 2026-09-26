@@ -21,6 +21,8 @@ Launch AI command-line tools directly from the Windows 10/11 context menu.
 3. Select **Save and apply**.
 4. Right-click a folder, folder background, or the desktop and select a tool directly.
 
+If Codex inherits administrator privileges, the launcher adds `--no-daemon` so the shared background server does not block startup. Codex still inherits those privileges.
+
 Windows 10 version 2004 (build 19041) or later and Windows 11 x64 are supported.
 
 > [!WARNING]

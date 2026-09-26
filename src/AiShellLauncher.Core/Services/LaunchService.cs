@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Security.Principal;
 using System.Text;
 using AiShellLauncher.Core.Models;
 
@@ -7,10 +8,12 @@ namespace AiShellLauncher.Core.Services;
 public sealed class LaunchService
 {
     private readonly CommandResolver _commandResolver;
+    private readonly Func<bool> _isElevated;
 
-    public LaunchService(CommandResolver? commandResolver = null)
+    public LaunchService(CommandResolver? commandResolver = null, Func<bool>? isElevated = null)
     {
         _commandResolver = commandResolver ?? new CommandResolver();
+        _isElevated = isElevated ?? IsCurrentProcessElevated;
     }
 
     public LaunchPlan CreatePlan(LauncherConfig config, string toolId, string modeId, string workingDirectory)
@@ -36,8 +39,19 @@ public sealed class LaunchService
 
         var executable = _commandResolver.Resolve(tool.Command)
             ?? throw new FileNotFoundException($"没有找到 {tool.Name} 的启动命令：{tool.Command}");
-        var arguments = ArgumentTemplates.Expand(mode.Arguments, Path.GetFullPath(workingDirectory));
+        var arguments = ArgumentTemplates.Expand(mode.Arguments, Path.GetFullPath(workingDirectory)).ToList();
+        if (tool.IsBuiltIn && tool.Id.Equals("codex", StringComparison.OrdinalIgnoreCase) &&
+            _isElevated() && !arguments.Contains("--no-daemon", StringComparer.OrdinalIgnoreCase))
+        {
+            arguments.Insert(0, "--no-daemon");
+        }
         return new LaunchPlan(tool.Name, mode.Name, executable, arguments, Path.GetFullPath(workingDirectory), mode.Risk);
+    }
+
+    private static bool IsCurrentProcessElevated()
+    {
+        using var identity = WindowsIdentity.GetCurrent();
+        return new WindowsPrincipal(identity).IsInRole(WindowsBuiltInRole.Administrator);
     }
 
     public Process Start(LaunchPlan plan)

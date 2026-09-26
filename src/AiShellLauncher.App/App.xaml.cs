@@ -102,7 +102,7 @@ public partial class App : Application
             throw new InvalidDataException(loadResult.Warning);
         }
 
-        var runner = Path.Combine(RuntimeInstaller.RuntimeRoot, "AiShellLauncher.Runner.exe");
+        var runner = RuntimeInstaller.RunnerPath;
         var runnerArguments = new[] { "--launch", toolId, "--mode", modeId, "--path", workingDirectory };
         using var process = new TerminalLaunchService().Start(
             loadResult.Config.Terminal,
